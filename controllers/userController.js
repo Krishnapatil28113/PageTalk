@@ -19,12 +19,12 @@ exports.addUser = async (req, res) => {
   try {
     const { data, error: dbError } = await supabase
       .from("user")
-      .insert([req.body]);
+      .insert(req.body);
     if (dbError) {
       throw new Error(dbError.message);
     }
 
-    return data;
+    res.json(data);
   } catch (error) {
     throw error;
   }

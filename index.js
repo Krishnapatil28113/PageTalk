@@ -8,11 +8,15 @@ const app = express();
 const port = process.env.PORT || 5000;
 
 const userRoutes = require("./routes/userRoutes");
+const saveNotesRoute = require("./routes/workspaceRoutes/notesRoutes/notesRoutes");
+const chatRoutes = require("./routes/workspaceRoutes/chatRoutes/chatRoutes");
 
 // Middlewares
 app.use(cors());
 app.use(express.json());
 app.use(userRoutes);
+app.use(saveNotesRoute); // TESTED
+app.use(chatRoutes);
 // async function run() {
 //   try {
 //     app.get("/", (req, res) => {
