@@ -41,10 +41,7 @@ const Component: React.FC<PdfCardProps> = ({
             </CardContent>
             <Separator />
             <CardFooter className="mt-5 space-x-5 items-center">
-                <Button onClick={onChatPressed}>Chat</Button>
-                <Link isExternal href={link}>
-                    <Button>Download</Button>
-                </Link>
+                <Button onClick={onChatPressed}>Enter Workspace</Button>
             </CardFooter>
         </Card>
     );
