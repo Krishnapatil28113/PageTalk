@@ -1,6 +1,6 @@
 const supabase = require("../../../supabase/supabaseClient");
 
-exports.saveChat = async (req, res) => {
+exports.saveNote = async (req, res) => {
   try {
     const { data } = req.body;
 
