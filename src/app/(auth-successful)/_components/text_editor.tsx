@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 import dynamic from "next/dynamic";
 import { createClientComponentClient } from "@supabase/auth-helpers-nextjs";
 import { useAppContext } from "@/state/appState";
-
+import { useRouter } from "next/navigation";
 function TextEditor() {
   const router = useRouter();
   const [value, setValue] = useState("");
@@ -52,22 +52,23 @@ function TextEditor() {
     return doc.body.textContent || "";
   };
 
-  const handleChat = () => {
-    router.push('/chat')
-  }
+  // const handleChat = () => {
+  //   router.push('/chat')
+  // }
   return (
     <div>
-      <div className="items flex justify-center items-center">
-        <Button onClick={handleSave}>Save</Button>
-        <span className="margin-left: 10px;">&nbsp;</span>{" "}
-        <Button>Ask AI</Button>
-      </div>
+      
       <ReactQuill
         modules={module}
         theme="snow"
         value={value}
         onChange={setValue}
       />
+      <div className="items flex justify-center items-center">
+        <Button onClick={handleSave}>Save</Button>
+        <span className="margin-left: 10px;">&nbsp;</span>{" "}
+        <Button onClick={handleChat}>Ask AI</Button>
+      </div>
     </div>
   );
 }
