@@ -12,14 +12,15 @@ import {
 import IconButton from "@mui/material/IconButton";
 import MicIcon from '@mui/icons-material/Mic';
 
+
 export default function Component() {
     const [messages, setMessages] = useState([
         { text: "Hello, how are you?", sender: "user" },
         { text: "I'm fine, thanks for asking!", sender: "receiver" },
     ]);
     const [newMessage, setNewMessage] = useState("");
-
     const [isListening, setIsListening] = useState(false);
+   
 
   useEffect(() => {
     let recognitionInstance;
@@ -77,6 +78,13 @@ export default function Component() {
             // You can send the message to the backend here
         }
     };
+
+    const iconColor = isListening ? 'green' : 'initial';
+    const iconStyle = {
+        padding: '20px',
+        margin: '10px',
+        color: iconColor,
+      };
 
     return (
         <div key="1" className="flex w-screen bg-white dark:bg-zinc-800">
@@ -173,7 +181,7 @@ export default function Component() {
                         <footer className="border-t dark:border-zinc-700 p-4">
                             <div className="flex items-center gap-2">
                             <IconButton
-                        style={{ padding: '20px', margin: '10px' }}
+                        style = {iconStyle}
                         onClick={() => setIsListening((prev) => !prev)}
                     >
                         <MicIcon />
