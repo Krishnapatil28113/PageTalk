@@ -15,3 +15,18 @@ exports.saveChat = async (req, res) => {
     res.status(500).json({ success: false, error: "Failed to save data" });
   }
 };
+
+exports.getAllNotes = async (req, res) => {
+  try {
+    const { data, error } = await supabase.from("notes").select("*");
+
+    if (error) {
+      throw error;
+    }
+
+    res.status(200).json({ success: true, data });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ success: false, error: "Failed to fetch notes" });
+  }
+};

@@ -2,14 +2,13 @@ const supabase = require("../../../supabase/supabaseClient");
 
 exports.send = async (req, res) => {
   try {
-    const { content, pdf_id, isModelResponse, user_id } = req.body;
+    const { content, pdf_id, isModelResponse } = req.body;
 
     const { data, error } = await supabase.from("message").insert([
       {
         content: content,
         pdf_id: pdf_id,
         isModelResponse: isModelResponse,
-        user_id: user_id,
       },
     ]);
 
@@ -24,9 +23,9 @@ exports.send = async (req, res) => {
   }
 };
 
-exports.getAllChats = async (req, res) => {
+exports.getAllMessages = async (req, res) => {
   try {
-    const { data, error } = await supabase.from("chat").select("*");
+    const { data, error } = await supabase.from("message").select("content");
 
     if (error) {
       throw error;

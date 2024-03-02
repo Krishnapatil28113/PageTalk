@@ -12,7 +12,9 @@ exports.getAllusers = async (req, res) => {
       }
       res.json(data);
     }
-  } catch (error) {}
+  } catch (error) {
+    console.log(error);
+  }
 };
 
 exports.addUser = async (req, res) => {
@@ -26,6 +28,6 @@ exports.addUser = async (req, res) => {
 
     res.json(data);
   } catch (error) {
-    throw error;
+    console.log(error);
   }
 };
