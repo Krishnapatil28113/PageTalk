@@ -145,7 +145,7 @@ export default function Component() {
                                     <AvatarFallback>U</AvatarFallback>
                                 </Avatar>
                                 <div>
-                                    Contact Namesss
+                                    Contact Names
                                     <span className="text-xs text-green-600 block">
                                         Online
                                     </span>
