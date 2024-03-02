@@ -1,4 +1,3 @@
-"use client";
 import React, { useState, useMemo, useEffect } from "react";
 import "react-quill/dist/quill.snow.css";
 import { Button } from "@/components/ui/button";
@@ -7,7 +6,7 @@ import { createClientComponentClient } from "@supabase/auth-helpers-nextjs";
 import { useAppContext } from "@/state/appState";
 import { useRouter } from "next/navigation";
 
-function TextEditor() {
+const TextEditor = () => {
   const router = useRouter();
   const [value, setValue] = useState("");
   const [text, setText] = useState("");
@@ -88,7 +87,7 @@ function TextEditor() {
     };
   }, [isListening]);
 
-const [recognizedSpeech, setRecognizedSpeech] = useState("");
+  const [recognizedSpeech, setRecognizedSpeech] = useState("");
 
   const toggleSpeechRecognition = () => {
     setIsListening((prev) => !prev);
@@ -110,21 +109,35 @@ const [recognizedSpeech, setRecognizedSpeech] = useState("");
   };
 
   return (
-    <div>
-      <ReactQuill modules={module} theme="snow" value={value} onChange={setValue} />
-      <div className="items flex justify-center items-center">
-        <Button style={{ padding: '20px', margin: '10px' }} onClick={handleSave}>
-          Save
-        </Button>
-        <Button style={{ padding: '20px', margin: '10px' }} onClick={handleChat}>
-          Ask AI
-        </Button>
-        <Button style={{ padding: '20px', margin: '10px' }} onClick={toggleSpeechRecognition}>
-          {isListening ? 'Stop Listening' : 'Start Listening'}
-        </Button>
+    <div style={{ display: "flex", height: "100vh" }}>
+      {/* Left side: PDF Viewer */}
+      <div style={{ flex: "1", borderRight: "1px solid #ccc", padding: "10px" }}>
+        {/* Add your PDF viewer component here */}
+        {/* Example: */}
+        <iframe
+          src="https://example.com/your-pdf-document.pdf"
+          title="PDF Viewer"
+          style={{ width: "100%", height: "100%" }}
+        />
+      </div>
+
+      {/* Right side: Text Editor */}
+      <div style={{ flex: "1", padding: "10px" }}>
+        <ReactQuill modules={module} theme="snow" value={value} onChange={setValue} />
+        <div className="items flex justify-center items-center">
+          <Button style={{ padding: '20px', margin: '10px' }} onClick={handleSave}>
+            Save
+          </Button>
+          <Button style={{ padding: '20px', margin: '10px' }} onClick={handleChat}>
+            Ask AI
+          </Button>
+          <Button style={{ padding: '20px', margin: '10px' }} onClick={toggleSpeechRecognition}>
+            {isListening ? 'Stop Listening' : 'Start Listening'}
+          </Button>
+        </div>
       </div>
     </div>
   );
-}
+};
 
 export default TextEditor;
