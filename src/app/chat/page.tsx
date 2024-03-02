@@ -1,5 +1,5 @@
 "use client";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import MsgCard from "./components/msgCard";
@@ -9,6 +9,8 @@ import {
     ResizablePanel,
     ResizablePanelGroup,
 } from "@/components/ui/resizable";
+import IconButton from "@mui/material/IconButton";
+import MicIcon from '@mui/icons-material/Mic';
 
 export default function Component() {
     const [messages, setMessages] = useState([
@@ -16,6 +18,52 @@ export default function Component() {
         { text: "I'm fine, thanks for asking!", sender: "receiver" },
     ]);
     const [newMessage, setNewMessage] = useState("");
+
+    const [isListening, setIsListening] = useState(false);
+
+  useEffect(() => {
+    let recognitionInstance;
+
+    const startSpeechRecognition = () => {
+      recognitionInstance = new window.webkitSpeechRecognition();
+      recognitionInstance.lang = 'en-US';
+
+      recognitionInstance.onresult = (event) => {
+        const result = event.results[0][0].transcript;
+        setNewMessage((prevMessage) => prevMessage + ' ' + result);
+      };
+
+      recognitionInstance.onend = () => {
+        setIsListening(false);
+      };
+
+      recognitionInstance.onerror = (event) => {
+        console.error('Speech recognition error:', event.error);
+      };
+
+      recognitionInstance.start();
+      setIsListening(true);
+    };
+
+    const stopSpeechRecognition = () => {
+      if (recognitionInstance) {
+        recognitionInstance.stop();
+        setIsListening(false);
+      }
+    };
+
+    if (isListening) {
+      startSpeechRecognition();
+    } else if (recognitionInstance) {
+      stopSpeechRecognition();
+    }
+
+    return () => {
+      if (recognitionInstance) {
+        stopSpeechRecognition();
+      }
+    };
+  }, [isListening]);
 
     const handleSendMessage = () => {
         if (newMessage.trim() !== "") {
@@ -124,9 +172,12 @@ export default function Component() {
                         </main>
                         <footer className="border-t dark:border-zinc-700 p-4">
                             <div className="flex items-center gap-2">
-                                <Button size="icon" variant="ghost">
-                                    <SmileIcon className="w-6 h-6" />
-                                </Button>
+                            <IconButton
+                        style={{ padding: '20px', margin: '10px' }}
+                        onClick={() => setIsListening((prev) => !prev)}
+                    >
+                        <MicIcon />
+                    </IconButton>
                                 <Input
                                     className="flex-1"
                                     placeholder="Type a message..."
@@ -187,24 +238,3 @@ function SearchIcon(props: any) {
     );
 }
 
-function SmileIcon(props: any) {
-    return (
-        <svg
-            {...props}
-            xmlns="http://www.w3.org/2000/svg"
-            width="24"
-            height="24"
-            viewBox="0 0 24 24"
-            fill="none"
-            stroke="currentColor"
-            strokeWidth="2"
-            strokeLinecap="round"
-            strokeLinejoin="round"
-        >
-            <circle cx="12" cy="12" r="10" />
-            <path d="M8 14s1.5 2 4 2 4-2 4-2" />
-            <line x1="9" x2="9.01" y1="9" y2="9" />
-            <line x1="15" x2="15.01" y1="9" y2="9" />
-        </svg>
-    );
-}
