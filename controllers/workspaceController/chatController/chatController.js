@@ -25,7 +25,12 @@ exports.send = async (req, res) => {
 
 exports.getAllMessages = async (req, res) => {
   try {
-    const { data, error } = await supabase.from("message").select("content");
+    const { pdf_id } = req.body;
+
+    const { data, error } = await supabase
+      .from("message")
+      .select("content")
+      .eq("pdf_id", pdf_id);
 
     if (error) {
       throw error;
@@ -34,7 +39,7 @@ exports.getAllMessages = async (req, res) => {
     res.status(200).json({ success: true, data });
   } catch (error) {
     console.error(error);
-    res.status(500).json({ success: false, error: "Failed to fetch chats" });
+    res.status(500).json({ success: false, error: "Failed to fetch messages" });
   }
 };
 
