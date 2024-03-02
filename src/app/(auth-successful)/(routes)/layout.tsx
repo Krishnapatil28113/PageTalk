@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { createClientComponentClient } from "@supabase/auth-helpers-nextjs";
 import { useRouter } from "next/navigation";
 
@@ -32,6 +32,41 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
   const router = useRouter();
 
   const [selectedButton, setSelectedButton] = useState("");
+  const [uploadedPDFs, setUploadedPDFs] = useState([]);
+
+  const handlePDFUpload = async (file) => {
+    // Upload the file to your storage service (e.g., Supabase Storage)
+    const { data, error } = await supabase.storage
+      .from('your-storage-bucket') // Replace 'your-storage-bucket' with your actual storage bucket name
+      .upload(`pdfs/${file.name}`, file);
+  
+    if (error) {
+      console.error('Error uploading PDF:', error);
+      return;
+    }
+  
+    // Update the state with the uploaded PDF
+    setUploadedPDFs((prevPDFs) => [...prevPDFs, { name: file.name, url: data.Key }]);
+  };
+  
+  // Assume you have a function to fetch PDFs asynchronously
+  const fetchPDFs = async () => {
+    try {
+      // Fetch PDF data from your API or storage
+      const response = await yourAPICallToGetPDFs();
+      const pdfs = response.data; // Adjust this based on your actual response structure
+
+      setUploadedPDFs(pdfs);
+    } catch (error) {
+      console.error('Error fetching PDFs:', error);
+    }
+  };
+
+  useEffect(() => {
+    // Fetch PDFs when the component mounts
+    fetchPDFs();
+  }, []); // Empty dependency array to ensure it only runs once
+
 
   const handleSidebarButtonClick = (buttonName: string) => {
     setSelectedButton(buttonName);
@@ -48,6 +83,11 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
     Home: "/home",
   };
 
+  const handlePDFSelection = (selectedPDF) => {
+    // Implement the logic to handle the selected PDF
+    console.log('Selected PDF:', selectedPDF);
+  };  
+
   return (
     <div className="h-full">
       {/* Menu */}
@@ -57,157 +97,29 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
           <MenubarTrigger className="font-bold text-xl">
             PageTalk
           </MenubarTrigger>
-          <MenubarContent>
-            <MenubarItem>About Us</MenubarItem>
-            <MenubarSeparator />
-            <MenubarItem>
-              Preferences... <MenubarShortcut>⌘,</MenubarShortcut>
-            </MenubarItem>
-            <MenubarSeparator />
-            <MenubarItem>
-              Hide Music... <MenubarShortcut>⌘H</MenubarShortcut>
-            </MenubarItem>
-            <MenubarItem>
-              Hide Others... <MenubarShortcut>⇧⌘H</MenubarShortcut>
-            </MenubarItem>
-            <MenubarShortcut />
-            <MenubarItem
-              className="bg-red-100 focus:bg-red-200"
-              onClick={handleLogout}
-            >
-              Logout <MenubarShortcut>⌘Q</MenubarShortcut>
-            </MenubarItem>
-          </MenubarContent>
         </MenubarMenu>
         <MenubarMenu>
-          <MenubarTrigger className="relative">File</MenubarTrigger>
-          <MenubarContent>
-            <MenubarSub>
-              <MenubarSubTrigger>New</MenubarSubTrigger>
-              <MenubarSubContent className="w-[230px]">
-                <MenubarItem>
-                  Playlist <MenubarShortcut>⌘N</MenubarShortcut>
-                </MenubarItem>
-                <MenubarItem disabled>
-                  Playlist from Selection <MenubarShortcut>⇧⌘N</MenubarShortcut>
-                </MenubarItem>
-                <MenubarItem>
-                  Smart Playlist... <MenubarShortcut>⌥⌘N</MenubarShortcut>
-                </MenubarItem>
-                <MenubarItem>Playlist Folder</MenubarItem>
-                <MenubarItem disabled>Genius Playlist</MenubarItem>
-              </MenubarSubContent>
-            </MenubarSub>
-            <MenubarItem>
-              Open Stream URL... <MenubarShortcut>⌘U</MenubarShortcut>
-            </MenubarItem>
-            <MenubarItem>
-              Close Window <MenubarShortcut>⌘W</MenubarShortcut>
-            </MenubarItem>
-            <MenubarSeparator />
-            <MenubarSub>
-              <MenubarSubTrigger>Library</MenubarSubTrigger>
-              <MenubarSubContent>
-                <MenubarItem>Update Cloud Library</MenubarItem>
-                <MenubarItem>Update Genius</MenubarItem>
-                <MenubarSeparator />
-                <MenubarItem>Organize Library...</MenubarItem>
-                <MenubarItem>Export Library...</MenubarItem>
-                <MenubarSeparator />
-                <MenubarItem>Import Playlist...</MenubarItem>
-                <MenubarItem disabled>Export Playlist...</MenubarItem>
-                <MenubarItem>Show Duplicate Items</MenubarItem>
-                <MenubarSeparator />
-                <MenubarItem>Get Album Artwork</MenubarItem>
-                <MenubarItem disabled>Get Track Names</MenubarItem>
-              </MenubarSubContent>
-            </MenubarSub>
-            <MenubarItem>
-              Import... <MenubarShortcut>⌘O</MenubarShortcut>
-            </MenubarItem>
-            <MenubarItem disabled>Burn Playlist to Disc...</MenubarItem>
-            <MenubarSeparator />
-            <MenubarItem>
-              Show in Finder <MenubarShortcut>⇧⌘R</MenubarShortcut>{" "}
-            </MenubarItem>
-            <MenubarItem>Convert</MenubarItem>
-            <MenubarSeparator />
-            <MenubarItem>Page Setup...</MenubarItem>
-            <MenubarItem disabled>
-              Print... <MenubarShortcut>⌘P</MenubarShortcut>
-            </MenubarItem>
-          </MenubarContent>
+          <MenubarTrigger className="relative">About Us</MenubarTrigger>
         </MenubarMenu>
         <MenubarMenu>
-          <MenubarTrigger>Edit</MenubarTrigger>
-          <MenubarContent>
-            <MenubarItem disabled>
-              Undo <MenubarShortcut>⌘Z</MenubarShortcut>
-            </MenubarItem>
-            <MenubarItem disabled>
-              Redo <MenubarShortcut>⇧⌘Z</MenubarShortcut>
-            </MenubarItem>
-            <MenubarSeparator />
-            <MenubarItem disabled>
-              Cut <MenubarShortcut>⌘X</MenubarShortcut>
-            </MenubarItem>
-            <MenubarItem disabled>
-              Copy <MenubarShortcut>⌘C</MenubarShortcut>
-            </MenubarItem>
-            <MenubarItem disabled>
-              Paste <MenubarShortcut>⌘V</MenubarShortcut>
-            </MenubarItem>
-            <MenubarSeparator />
-            <MenubarItem>
-              Select All <MenubarShortcut>⌘A</MenubarShortcut>
-            </MenubarItem>
-            <MenubarItem disabled>
-              Deselect All <MenubarShortcut>⇧⌘A</MenubarShortcut>
-            </MenubarItem>
-            <MenubarSeparator />
-            <MenubarItem>
-              Smart Dictation...{" "}
-              <MenubarShortcut>
-                <svg
-                  xmlns="http://www.w3.org/2000/svg"
-                  fill="none"
-                  stroke="currentColor"
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth="2"
-                  className="h-4 w-4"
-                  viewBox="0 0 24 24"
-                >
-                  <path d="m12 8-9.04 9.06a2.82 2.82 0 1 0 3.98 3.98L16 12" />
-                  <circle cx="17" cy="7" r="5" />
-                </svg>
-              </MenubarShortcut>
-            </MenubarItem>
-            <MenubarItem>
-              Emoji & Symbols{" "}
-              <MenubarShortcut>
-                <svg
-                  xmlns="http://www.w3.org/2000/svg"
-                  fill="none"
-                  stroke="currentColor"
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth="2"
-                  className="h-4 w-4"
-                  viewBox="0 0 24 24"
-                >
-                  <circle cx="12" cy="12" r="10" />
-                  <path d="M2 12h20M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z" />
-                </svg>
-              </MenubarShortcut>
-            </MenubarItem>
-          </MenubarContent>
-        </MenubarMenu>
+  <MenubarTrigger>Workspaces</MenubarTrigger>
+  <MenubarContent>
+    <MenubarItem inset onClick={() => router.push('/home')}>
+      Home
+    </MenubarItem>
+    {/* Add uploaded PDFs to the Workspaces dropdown */}
+    {uploadedPDFs.map((pdf) => (
+      <MenubarItem key={pdf.name} inset onClick={() => handlePDFSelection(pdf)}>
+        {pdf.name}
+      </MenubarItem>
+    ))}
+    {/* Other items in the Workspaces dropdown */}
+  </MenubarContent>
+</MenubarMenu>
+
         <MenubarMenu>
           <MenubarTrigger>View</MenubarTrigger>
           <MenubarContent>
-            <MenubarCheckboxItem>Show Playing Next</MenubarCheckboxItem>
-            <MenubarCheckboxItem checked>Show Lyrics</MenubarCheckboxItem>
             <MenubarSeparator />
             <MenubarItem inset disabled>
               Show Status Bar
@@ -249,37 +161,39 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
                 </div>
                 <div className="py-2">
                   <h2 className="relative px-7 text-lg font-semibold tracking-tight">
-                    Playlists
+                    Documents
                   </h2>
                   <ScrollArea className="h-[300px] px-1">
-                    <div className="space-y-1 p-2">
-                      {/* {playlists?.map((playlist, i) => (
-                                                <Button
-                                                    key={`${playlist}-${i}`}
-                                                    variant="ghost"
-                                                    className="w-full justify-start font-normal"
-                                                >
-                                                    <svg
-                                                        xmlns="http://www.w3.org/2000/svg"
-                                                        viewBox="0 0 24 24"
-                                                        fill="none"
-                                                        stroke="currentColor"
-                                                        strokeWidth="2"
-                                                        strokeLinecap="round"
-                                                        strokeLinejoin="round"
-                                                        className="mr-2 h-4 w-4"
-                                                    >
-                                                        <path d="M21 15V6" />
-                                                        <path d="M18.5 18a2.5 2.5 0 1 0 0-5 2.5 2.5 0 0 0 0 5Z" />
-                                                        <path d="M12 12H3" />
-                                                        <path d="M16 6H3" />
-                                                        <path d="M12 18H3" />
-                                                    </svg>
-                                                    {playlist}
-                                                </Button>
-                                            ))} */}
-                    </div>
-                  </ScrollArea>
+  <div className="space-y-1 p-2">
+    {uploadedPDFs.map((pdf, i) => (
+      <Button
+        key={`${pdf.name}-${i}`}
+        variant="ghost"
+        className="w-full justify-start font-normal"
+        onClick={() => handlePDFSelection(pdf)}
+      >
+        <svg
+          xmlns="http://www.w3.org/2000/svg"
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          strokeWidth="2"
+          strokeLinecap="round"
+          strokeLinejoin="round"
+          className="mr-2 h-4 w-4"
+        >
+          <path d="M21 15V6" />
+          <path d="M18.5 18a2.5 2.5 0 1 0 0-5 2.5 2.5 0 0 0 0 5Z" />
+          <path d="M12 12H3" />
+          <path d="M16 6H3" />
+          <path d="M12 18H3" />
+        </svg>
+        {pdf.name}
+      </Button>
+    ))}
+  </div>
+</ScrollArea>
+
                 </div>
               </div>
             </div>
