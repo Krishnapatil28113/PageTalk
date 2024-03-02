@@ -1,210 +1,143 @@
-"use client";
-
-import { useState, useEffect } from "react";
+import React, { useState, useMemo, useEffect } from "react";
+import "react-quill/dist/quill.snow.css";
+import { Button } from "@/components/ui/button";
+import dynamic from "next/dynamic";
 import { createClientComponentClient } from "@supabase/auth-helpers-nextjs";
+import { useAppContext } from "@/state/appState";
 import { useRouter } from "next/navigation";
 
-import { useAppContext } from "@/state/appState";
-import { clearLocalStorage } from "@/lib/localStorageControl";
-import { BrowserRouter } from "react-router-dom";
-import {
-  Menubar,
-  MenubarCheckboxItem,
-  MenubarContent,
-  MenubarItem,
-  MenubarLabel,
-  MenubarMenu,
-  MenubarRadioGroup,
-  MenubarRadioItem,
-  MenubarSeparator,
-  MenubarShortcut,
-  MenubarSub,
-  MenubarSubContent,
-  MenubarSubTrigger,
-  MenubarTrigger,
-} from "@/components/ui/menubar";
-import { Button } from "@/components/ui/button";
-import { ScrollArea } from "@/components/ui/scroll-area";
-
-export default function AppLayout({ children }: { children: React.ReactNode }) {
-  const supabase = createClientComponentClient();
-  const { state, dispatch } = useAppContext();
+const TextEditor = () => {
   const router = useRouter();
+  const [value, setValue] = useState("");
+  const [text, setText] = useState("");
+  const ReactQuill = useMemo(
+    () => dynamic(() => import("react-quill"), { ssr: false }),
+    []
+  );
+  const { state, dispatch } = useAppContext();
+  const supabase = createClientComponentClient();
+  const toolbarOptions = [
+    ["bold", "italic", "underline", "strike"],
+    ["blockquote", "code-block"],
+    ["link", "formula"],
+    [{ header: [1, 2, 3, 4, 5, 6, false] }],
+    [{ list: "ordered" }, { list: "bullet" }, { list: "check" }],
+    [{ script: "sub" }, { script: "super" }],
+    [{ indent: "-1" }, { indent: "+1" }],
+    [{ direction: "rtl" }],
+    [{ color: [] }, { background: [] }],
+    [{ font: [] }],
+    [{ align: [] }],
+    ["clean"],
+  ];
 
-  const [selectedButton, setSelectedButton] = useState("");
-  const [uploadedPDFs, setUploadedPDFs] = useState([]);
-
-  const handlePDFUpload = async (file) => {
-    // Upload the file to your storage service (e.g., Supabase Storage)
-    const { data, error } = await supabase.storage
-      .from('your-storage-bucket') // Replace 'your-storage-bucket' with your actual storage bucket name
-      .upload(`pdfs/${file.name}`, file);
-  
-    if (error) {
-      console.error('Error uploading PDF:', error);
-      return;
-    }
-  
-    // Update the state with the uploaded PDF
-    setUploadedPDFs((prevPDFs) => [...prevPDFs, { name: file.name, url: data.Key }]);
+  const module = {
+    toolbar: toolbarOptions,
   };
-  
-  // Assume you have a function to fetch PDFs asynchronously
-  const fetchPDFs = async () => {
-    try {
-      // Fetch PDF data from your API or storage
-      const response = await yourAPICallToGetPDFs();
-      const pdfs = response.data; // Adjust this based on your actual response structure
 
-      setUploadedPDFs(pdfs);
-    } catch (error) {
-      console.error('Error fetching PDFs:', error);
-    }
-  };
+  const [isListening, setIsListening] = useState(false);
+
+  const [recognition, setRecognition] = useState(null);
 
   useEffect(() => {
-    // Fetch PDFs when the component mounts
-    fetchPDFs();
-  }, []); // Empty dependency array to ensure it only runs once
+    let recognitionInstance;
 
+    const startSpeechRecognition = () => {
+      recognitionInstance = new window.webkitSpeechRecognition();
+      recognitionInstance.lang = 'en-US';
 
-  const handleSidebarButtonClick = (buttonName: string) => {
-    setSelectedButton(buttonName);
+      recognitionInstance.onresult = (event) => {
+        const result = event.results[0][0].transcript;
+        setValue((prevValue) => prevValue + ' ' + result);
+
+        // Store recognized speech in a variable
+        setRecognizedSpeech(result);
+        console.log("Recognized Speech:", result);
+      };
+
+      recognitionInstance.onend = () => {
+        setIsListening(false);
+      };
+
+      recognitionInstance.onerror = (event) => {
+        console.error('Speech recognition error:', event.error);
+      };
+
+      recognitionInstance.start();
+      setIsListening(true);
+    };
+
+    const stopSpeechRecognition = () => {
+      if (recognitionInstance) {
+        recognitionInstance.stop();
+        setIsListening(false);
+      }
+    };
+
+    if (isListening) {
+      startSpeechRecognition();
+    } else {
+      stopSpeechRecognition();
+    }
+
+    return () => {
+      if (recognitionInstance) {
+        stopSpeechRecognition();
+      }
+    };
+  }, [isListening]);
+
+  const [recognizedSpeech, setRecognizedSpeech] = useState("");
+
+  const toggleSpeechRecognition = () => {
+    setIsListening((prev) => !prev);
   };
 
-  const handleLogout = async () => {
-    await supabase.auth.signOut();
-    dispatch({ type: "RESET_APP_STATE" });
-    clearLocalStorage();
-    router.replace("/");
+  const handleSave = () => {
+    const plainText = stripHtml(value);
+    setText(plainText);
+    console.log("Content saved:", plainText);
   };
 
-  const sidebarLinks: Record<string, string> = {
-    Home: "/home",
+  const handleChat = () => {
+    router.push(`/chat?message=${encodeURIComponent(text)}`);
   };
 
-  const handlePDFSelection = (selectedPDF) => {
-    // Implement the logic to handle the selected PDF
-    console.log('Selected PDF:', selectedPDF);
-  };  
+  const stripHtml = (html) => {
+    var doc = new DOMParser().parseFromString(html, "text/html");
+    return doc.body.textContent || "";
+  };
 
   return (
-    <div className="h-full">
-      {/* Menu */}
+    <div style={{ display: "flex", height: "100vh" }}>
+      {/* Left side: PDF Viewer */}
+      <div style={{ flex: "1", borderRight: "1px solid #ccc", padding: "10px" }}>
+        {/* Add your PDF viewer component here */}
+        {/* Example: */}
+        <iframe
+          src="https://example.com/your-pdf-document.pdf"
+          title="PDF Viewer"
+          style={{ width: "100%", height: "100%" }}
+        />
+      </div>
 
-      <Menubar className="rounded-none border-b border-none px-2 lg:px-4">
-        <MenubarMenu>
-          <MenubarTrigger className="font-bold text-xl">
-            PageTalk
-          </MenubarTrigger>
-        </MenubarMenu>
-        <MenubarMenu>
-          <MenubarTrigger className="relative">About Us</MenubarTrigger>
-        </MenubarMenu>
-        <MenubarMenu>
-  <MenubarTrigger>Workspaces</MenubarTrigger>
-  <MenubarContent>
-    <MenubarItem inset onClick={() => router.push('/home')}>
-      Home
-    </MenubarItem>
-    {/* Add uploaded PDFs to the Workspaces dropdown */}
-    {uploadedPDFs.map((pdf) => (
-      <MenubarItem key={pdf.name} inset onClick={() => handlePDFSelection(pdf)}>
-        {pdf.name}
-      </MenubarItem>
-    ))}
-    {/* Other items in the Workspaces dropdown */}
-  </MenubarContent>
-</MenubarMenu>
-
-        <MenubarMenu>
-          <MenubarTrigger>View</MenubarTrigger>
-          <MenubarContent>
-            <MenubarSeparator />
-            <MenubarItem inset disabled>
-              Show Status Bar
-            </MenubarItem>
-            <MenubarSeparator />
-            <MenubarItem inset>Hide Sidebar</MenubarItem>
-            <MenubarItem disabled inset>
-              Enter Full Screen
-            </MenubarItem>
-          </MenubarContent>
-        </MenubarMenu>
-      </Menubar>
-
-      <div className="border-t">
-        <div className="bg-background">
-          <div className="grid sm:grid-cols-3 lg:grid-cols-5">
-            {/* Sidebar */}
-            <div className="pb-12">
-              <div className="space-y-4 py-4">
-                <div className="px-3 py-2">
-                  <h2 className="mb-2 px-4 text-lg font-semibold tracking-tight">
-                    Discover
-                  </h2>
-                  {Object.keys(sidebarLinks).map((buttonName) => (
-                    <Button
-                      key={buttonName}
-                      variant={
-                        buttonName === selectedButton ? "secondary" : "ghost"
-                      }
-                      className="w-full justify-start"
-                      onClick={() => {
-                        handleSidebarButtonClick(buttonName);
-                        router.push(sidebarLinks[buttonName]);
-                      }}
-                    >
-                      {buttonName}
-                    </Button>
-                  ))}
-                </div>
-                <div className="py-2">
-                  <h2 className="relative px-7 text-lg font-semibold tracking-tight">
-                    Documents
-                  </h2>
-                  <ScrollArea className="h-[300px] px-1">
-  <div className="space-y-1 p-2">
-    {uploadedPDFs.map((pdf, i) => (
-      <Button
-        key={`${pdf.name}-${i}`}
-        variant="ghost"
-        className="w-full justify-start font-normal"
-        onClick={() => handlePDFSelection(pdf)}
-      >
-        <svg
-          xmlns="http://www.w3.org/2000/svg"
-          viewBox="0 0 24 24"
-          fill="none"
-          stroke="currentColor"
-          strokeWidth="2"
-          strokeLinecap="round"
-          strokeLinejoin="round"
-          className="mr-2 h-4 w-4"
-        >
-          <path d="M21 15V6" />
-          <path d="M18.5 18a2.5 2.5 0 1 0 0-5 2.5 2.5 0 0 0 0 5Z" />
-          <path d="M12 12H3" />
-          <path d="M16 6H3" />
-          <path d="M12 18H3" />
-        </svg>
-        {pdf.name}
-      </Button>
-    ))}
-  </div>
-</ScrollArea>
-
-                </div>
-              </div>
-            </div>
-
-            {/* Main */}
-            <div className="col-span-3 lg:col-span-4 lg:border-l">
-              <div>{children}</div>
-            </div>
-          </div>
+      {/* Right side: Text Editor */}
+      <div style={{ flex: "1", padding: "10px" }}>
+        <ReactQuill modules={module} theme="snow" value={value} onChange={setValue} />
+        <div className="items flex justify-center items-center">
+          <Button style={{ padding: '20px', margin: '10px' }} onClick={handleSave}>
+            Save
+          </Button>
+          <Button style={{ padding: '20px', margin: '10px' }} onClick={handleChat}>
+            Ask AI
+          </Button>
+          <Button style={{ padding: '20px', margin: '10px' }} onClick={toggleSpeechRecognition}>
+            {isListening ? 'Stop Listening' : 'Start Listening'}
+          </Button>
         </div>
       </div>
     </div>
   );
-}
+};
+
+export default TextEditor;
