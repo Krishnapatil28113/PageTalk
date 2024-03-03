@@ -11,20 +11,20 @@ import {
 } from "@/components/ui/resizable";
 import IconButton from "@mui/material/IconButton";
 import MicIcon from '@mui/icons-material/Mic';
-
-
+import axios from "axios";
 export default function Component() {
     const [messages, setMessages] = useState([
         { text: "Hello, how are you?", sender: "user" },
         { text: "I'm fine, thanks for asking!", sender: "receiver" },
     ]);
     const [newMessage, setNewMessage] = useState("");
-    const [isListening, setIsListening] = useState(false);
-   
 
+    const [isListening, setIsListening] = useState(false);
+    const [pdfId, setPdfId] = useState('');
+    const [preMess, setPreMess] = useState([]);
   useEffect(() => {
     let recognitionInstance;
-
+    
     const startSpeechRecognition = () => {
       recognitionInstance = new window.webkitSpeechRecognition();
       recognitionInstance.lang = 'en-US';
@@ -59,14 +59,29 @@ export default function Component() {
       stopSpeechRecognition();
     }
 
+    const fetchDet = async () => {
+        try {
+            const resp = await axios.get('http://localhost:5000/fetchPDF');
+            console.log('RESPONSEE', resp.data[0].id);
+            setPdfId(resp.data[0].id);
+            //console.log(typeof(resp.data[0].id));
+                
+        } catch (error) {
+            console.error('Error fetching data:', error);
+        }
+    }
+    
+        fetchDet();
+    
     return () => {
       if (recognitionInstance) {
         stopSpeechRecognition();
       }
     };
-  }, [isListening]);
+    
+  }, [isListening, pdfId]);
 
-    const handleSendMessage = () => {
+    const handleSendMessage = async() => {
         if (newMessage.trim() !== "") {
             setMessages([
                 ...messages,
@@ -74,18 +89,26 @@ export default function Component() {
             ]);
             // call the api for posting in the messages table and the chatbot backend
             // 2 apis : 1 for storing in chat table async and 1 for fetching the response from the bot asyc(await for the output)
+            
+            await axios.post('http://localhost:5000/workspace/chat/send', {          
+                    "content": newMessage,
+                    "pdf_id": pdfId,
+                    "isModelResponse": false,      
+            })
             setNewMessage("");
             // You can send the message to the backend here
         }
     };
-
-    const iconColor = isListening ? 'green' : 'initial';
-    const iconStyle = {
-        padding: '20px',
-        margin: '10px',
-        color: iconColor,
-      };
-
+    const fetchMess = async() =>{
+        //console.log('IDDD', pdfId);
+        if(pdfId)
+        {   
+            console.log('pdffff', pdfId);
+            const resp1 = await axios.get(`http://localhost:5000/workspace/chat/allChats`)
+                setPreMess(resp1.data.data);
+            }        //console.log('CHATSSS', preMess);
+    }
+    fetchMess();
     return (
         <div key="1" className="flex w-screen bg-white dark:bg-zinc-800">
             <ResizablePanelGroup
@@ -145,7 +168,7 @@ export default function Component() {
                                     <AvatarFallback>U</AvatarFallback>
                                 </Avatar>
                                 <div>
-                                    Contact Names
+                                    Contact Namesss
                                     <span className="text-xs text-green-600 block">
                                         Online
                                     </span>
@@ -153,35 +176,34 @@ export default function Component() {
                             </h2>
                         </header>
                         <main className="flex-1 overflow-auto p-4">
-                            <div className="space-y-4">
-                                {messages.map((message, index) => (
-                                    <div
-                                        key={index}
-                                        className={
-                                            message.sender !== "user"
-                                                ? "flex items-end gap-2"
-                                                : "flex items-end gap-2 justify-end"
-                                        }
-                                    >
-                                        <div
-                                            className={
-                                                message.sender === "user"
-                                                    ? "rounded-lg bg-zinc-200 dark:bg-zinc-700 p-2"
-                                                    : "rounded-lg bg-blue-500 text-white p-2"
-                                            }
-                                        >
-                                            <p className="text-sm">
-                                                {message.text}
-                                            </p>
-                                        </div>
-                                    </div>
-                                ))}
-                            </div>
-                        </main>
+    <div className="space-y-4">
+        {preMess.map((message, index) => (
+            <div
+                key={index}
+                className={
+                    message.isModelResponse
+                        ? "flex items-end gap-2 "
+                        : "flex items-end gap-2 justify-end"
+                }
+            >
+                <div
+                    className={
+                        message.isModelResponse
+                            ? "rounded-lg bg-blue-500 text-white p-2"
+                            : "rounded-lg bg-zinc-200 dark:bg-zinc-700 p-2"
+                    }
+                >
+                    <p className="text-sm">{message.content}</p>
+                </div>
+            </div>
+        ))}
+    </div>
+</main>
+
                         <footer className="border-t dark:border-zinc-700 p-4">
                             <div className="flex items-center gap-2">
                             <IconButton
-                        style = {iconStyle}
+                        style={{ padding: '20px', margin: '10px' }}
                         onClick={() => setIsListening((prev) => !prev)}
                     >
                         <MicIcon />
@@ -245,4 +267,3 @@ function SearchIcon(props: any) {
         </svg>
     );
 }
-
