@@ -5,7 +5,11 @@ import dynamic from "next/dynamic";
 import { createClientComponentClient } from "@supabase/auth-helpers-nextjs";
 import { useAppContext } from "@/state/appState";
 import { useRouter } from "next/navigation";
+import axios from "axios";
+// import pdfjsLib from 'pdfjs-dist';
+// import { pdfjs } from "react-pdf";
 
+//pdfjs.GlobalWorkerOptions.workerSrc = `//cdnjs.cloudflare.com/ajax/libs/pdf.js/${pdfjs.version}/pdf.worker.js`;
 const TextEditor = () => {
   const router = useRouter();
   const [value, setValue] = useState("");
@@ -16,6 +20,7 @@ const TextEditor = () => {
   );
   const { state, dispatch } = useAppContext();
   const supabase = createClientComponentClient();
+  var notes;
   const toolbarOptions = [
     ["bold", "italic", "underline", "strike"],
     ["blockquote", "code-block"],
@@ -36,9 +41,10 @@ const TextEditor = () => {
   };
 
   const [isListening, setIsListening] = useState(false);
-
+  const [pdfURL, setPdfURL] = useState('');
   const [recognition, setRecognition] = useState(null);
-
+  const [loadNotes, setLoadNotes] = useState([{}]);
+  
   useEffect(() => {
     let recognitionInstance;
 
@@ -80,13 +86,31 @@ const TextEditor = () => {
       stopSpeechRecognition();
     }
 
+    const fetchDet = async() =>{
+      const resp = await axios.get('http://localhost:5000/fetchPDF');
+      //console.log('RESPONSEE', resp.data[0].download_url);
+      setPdfURL(resp.data[0].download_url);
+      }
+      fetchDet();    
+
+
+    
+
     return () => {
       if (recognitionInstance) {
         stopSpeechRecognition();
       }
     };
-  }, [isListening]);
+  }, [isListening, notes]);
 
+  const fetchNotes = async() =>{
+    const resp = await axios.get('http://localhost:5000/workspace/notes/allNotes');
+    //console.log('NOTESSS', resp.data.data);
+    notes = resp.data.data;
+    setLoadNotes(resp.data.data);
+    console.log('NOTEE',notes);
+  }
+  fetchNotes();
   const [recognizedSpeech, setRecognizedSpeech] = useState("");
 
   const toggleSpeechRecognition = () => {
@@ -97,7 +121,14 @@ const TextEditor = () => {
     const plainText = stripHtml(value);
     setText(plainText);
     console.log("Content saved:", plainText);
+    axios.post('http://127.0.0.1:5000/workspace/notes/save',{
+      "data" : {
+        "content" : plainText
+      }
+    })
   };
+
+
 
   const handleChat = () => {
     router.push(`/chat?message=${encodeURIComponent(text)}`);
@@ -108,6 +139,12 @@ const TextEditor = () => {
     return doc.body.textContent || "";
   };
 
+  //console.log('MMM', loadNotes);
+
+  
+  //handleExtractText();
+
+
   return (
     <div style={{ display: "flex", height: "100vh" }}>
       {/* Left side: PDF Viewer */}
@@ -115,8 +152,8 @@ const TextEditor = () => {
         {/* Add your PDF viewer component here */}
         {/* Example: */}
         <iframe
-          src="https://example.com/your-pdf-document.pdf"
-          title="PDF Viewer"
+          src={pdfURL}
+                   title="PDF Viewer"
           style={{ width: "100%", height: "100%" }}
         />
       </div>
@@ -135,6 +172,24 @@ const TextEditor = () => {
             {isListening ? 'Stop Listening' : 'Start Listening'}
           </Button>
         </div>
+        <div>
+        <div>
+  <h3>Loaded Notes:</h3>
+  <ul>
+    {loadNotes && loadNotes.map((note, index) => (
+      <li key={index} style={{ marginBottom: '20px' }}>
+        {/* Design each note element */}
+        <div style={{ border: '1px solid #ccc', padding: '10px', borderRadius: '5px' }}>
+          <p><strong>Note {note.id}</strong></p>
+          <p>{note.content}</p>
+          <p style={{ fontSize: '0.8em', color: '#666' }}>Created at: {new Date(note.created_at).toLocaleString()}</p>
+        </div>
+      </li>
+    ))}
+  </ul>
+</div>
+
+  </div>
       </div>
     </div>
   );
